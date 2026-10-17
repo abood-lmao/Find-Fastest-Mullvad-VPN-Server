@@ -1,4 +1,4 @@
-# Mullvad Fastest
+# Mullvad Fastest Server Finder
 
 Find the fastest Mullvad WireGuard server and connect to it.
 
