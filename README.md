@@ -4,7 +4,7 @@ Find the fastest Mullvad WireGuard server and connect to it.
 
 It downloads the live relay list, pings one server in each city, then pings every server in the cities that came back fastest. The window is one screen: pick a country or leave it on Anywhere, hit Find fastest, click Connect.
 
-<video src="Cropped.mp4" width="1224" height="1080" autoplay loop muted playsinline controls></video>
+https://github.com/user-attachments/assets/0d82c695-2eee-4719-869f-13eda9956804
 
 ## Run
 
