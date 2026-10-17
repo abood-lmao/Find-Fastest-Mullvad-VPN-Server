@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Fastest</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1c1c1c;
+      --card-2: #242424;
+      --text: #f4f1ea;
+      --muted: #9c988f;
+      --line: rgba(255, 255, 255, 0.08);
+      --yellow: #ffd524;
+      --ink: #161616;
+      --green: #8fd0a8;
+      --danger: #ffb4a8;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+    main {
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 22px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    h1 { font-size: 28px; line-height: 1; font-weight: 650; margin: 0; letter-spacing: -0.03em; }
+    .sub { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+    .status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 0; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 210px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .pill strong { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #6d6a64; flex: none; }
+    .pill.on .dot { background: var(--green); }
+    .pill.wait .dot { background: var(--yellow); }
+    .text-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 0;
+      font-size: 12px;
+    }
+    .text-btn:hover { color: var(--text); }
+    .picker { position: relative; }
+    #countryBtn, .primary, .stop {
+      width: 100%;
+      height: 46px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+    }
+    #countryBtn {
+      background: var(--card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      text-align: left;
+    }
+    #countryBtn span { color: var(--muted); }
+    .menu {
+      position: absolute;
+      z-index: 2;
+      left: 0;
+      right: 0;
+      top: calc(100% + 6px);
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    }
+    .menu[hidden] { display: none; }
+    .menu input {
+      width: 100%;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      padding: 0 10px;
+      margin-bottom: 6px;
+    }
+    #options { max-height: 240px; overflow: auto; }
+    .opt {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .opt:hover, .opt[aria-selected="true"] { background: rgba(255, 255, 255, 0.06); }
+    .opt small { color: var(--muted); }
+    .primary { background: var(--yellow); color: var(--ink); border: 0; font-weight: 650; }
+    .primary:disabled { opacity: 0.55; cursor: default; }
+    .stop { background: transparent; color: var(--text); }
+    .phase { min-height: 1.2em; margin: -6px 0 0; color: var(--muted); font-size: 13px; }
+    .bar { height: 2px; background: transparent; border-radius: 99px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; width: 0; background: var(--yellow); }
+    .note, .error { margin: 0; font-size: 13px; }
+    .note { color: var(--muted); }
+    .error { color: var(--danger); }
+    .hint { margin: 0; color: var(--muted); font-size: 13px; }
+    #list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 72px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--card);
+      border-radius: 14px;
+    }
+    .row.best { padding: 14px 12px; }
+    .ms {
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+    .row.best .ms { color: var(--yellow); font-size: 26px; }
+    .where { min-width: 0; }
+    .where strong, .where em { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .where strong { font-weight: 600; }
+    .where em { font-style: normal; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .tcp { color: var(--muted); font-weight: 500; font-size: 11px; margin-left: 4px; }
+    .conn, .now {
+      border-radius: 999px;
+      height: 32px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      background: transparent;
+    }
+    .row.best .conn { background: var(--yellow); color: var(--ink); border: 0; font-weight: 650; }
+    .now { color: var(--green); border-color: transparent; }
+    .idle { padding: 8px 2px 0; }
+    .idle p { margin: 0; }
+    .kicker { color: var(--muted); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .idle-host { font-size: 22px; font-weight: 650; letter-spacing: -0.03em; margin-top: 4px !important; }
+    .idle-where { color: var(--muted); margin-top: 2px !important; }
+    #list::-webkit-scrollbar { width: 10px; }
+    #list::-webkit-scrollbar-thumb { background: #333; border-radius: 99px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Fastest</h1>
+        <p class="sub">Mullvad WireGuard</p>
+      </div>
+      <div class="status">
+        <div class="pill" id="pill"><span class="dot"></span><strong id="pillText">Checking</strong></div>
+        <button class="text-btn" id="disconnect" hidden type="button">Disconnect</button>
+      </div>
+    </header>
+
+    <div class="picker">
+      <button id="countryBtn" type="button">Anywhere <span>all countries</span></button>
+      <div class="menu" id="menu" hidden>
+        <input id="filter" type="text" placeholder="Filter countries" autocomplete="off" spellcheck="false">
+        <div id="options"></div>
+      </div>
+    </div>
+
+    <button id="go" class="primary" type="button">Find fastest</button>
+    <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+    <p class="phase" id="phase"></p>
+    <p class="note" id="note" hidden></p>
+    <p class="error" id="error" hidden></p>
+    <p class="hint" id="hint">Checks one server in each city, then retests the closest.</p>
+
+    <div class="idle" id="idle" hidden>
+      <p class="kicker" id="idleKicker"></p>
+      <p class="idle-host" id="idleHost"></p>
+      <p class="idle-where" id="idleWhere"></p>
+    </div>
+
+    <ol id="list"></ol>
+  </main>
+  <script>
+    const pill = document.getElementById("pill");
+    const pillText = document.getElementById("pillText");
+    const disconnectBtn = document.getElementById("disconnect");
+    const countryBtn = document.getElementById("countryBtn");
+    const menu = document.getElementById("menu");
+    const filter = document.getElementById("filter");
+    const options = document.getElementById("options");
+    const goBtn = document.getElementById("go");
+    const bar = document.getElementById("bar");
+    const phase = document.getElementById("phase");
+    const note = document.getElementById("note");
+    const errorEl = document.getElementById("error");
+    const hint = document.getElementById("hint");
+    const idle = document.getElementById("idle");
+    const list = document.getElementById("list");
+
+    let countries = [];
+    let country = "";
+    let rows = new Map();
+    let scanning = false;
+    let source = null;
+    let status = { state: "" };
+    let menuOpen = false;
+
+    function fmt(ms) {
+      if (ms == null || ms < 1) return "<1";
+      return String(Math.round(ms));
+    }
+
+    function showError(msg) {
+      errorEl.hidden = !msg;
+      errorEl.textContent = msg || "";
+    }
+
+    function setNote(msg) {
+      note.hidden = !msg;
+      note.textContent = msg || "";
+    }
+
+    function placeName(location) {
+      if (!location) return "";
+      const parts = location.split(",");
+      return (parts[1] || parts[0]).trim();
+    }
+
+    function applyStatus(next) {
+      status = next || status;
+      const state = status.state || "Unknown";
+      const on = state.startsWith("Connected");
+      const wait = state.startsWith("Connecting") || state.startsWith("Disconnect");
+      pill.classList.toggle("on", on);
+      pill.classList.toggle("wait", wait && !on);
+      pill.title = [state, status.relay, status.location].filter(Boolean).join(" · ");
+      if (on) pillText.textContent = placeName(status.location) || status.relay || "Connected";
+      else if (state === "Not installed") pillText.textContent = "No Mullvad CLI";
+      else pillText.textContent = state;
+      disconnectBtn.hidden = !on;
+      renderIdle();
+      render();
+    }
+
+    function renderIdle() {
+      const on = (status.state || "").startsWith("Connected");
+      const show = on && rows.size === 0 && !scanning;
+      idle.hidden = !show;
+      if (!show) return;
+      document.getElementById("idleKicker").textContent = "Connected";
+      document.getElementById("idleHost").textContent = status.relay || "";
+      document.getElementById("idleWhere").textContent = status.location || "";
+    }
+
+    function countryLabel() {
+      if (!country) {
+        countryBtn.innerHTML = "Anywhere <span>all countries</span>";
+        return;
+      }
+      const found = countries.find((c) => c.code === country);
+      countryBtn.textContent = found ? found.name : country.toUpperCase();
+    }
+
+    function renderOptions() {
+      const q = filter.value.trim().toLowerCase();
+      options.replaceChildren();
+      const add = (code, title, meta) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "opt";
+        btn.setAttribute("aria-selected", String(code === country));
+        const name = document.createElement("span");
+        name.textContent = title;
+        const small = document.createElement("small");
+        small.textContent = meta;
+        btn.append(name, small);
+        btn.addEventListener("click", () => {
+          country = code;
+          countryLabel();
+          closeMenu();
+        });
+        options.append(btn);
+      };
+      if (!q) add("", "Anywhere", "All countries");
+      for (const c of countries) {
+        if (q && !c.name.toLowerCase().includes(q) && !c.code.includes(q)) continue;
+        add(c.code, c.name, String(c.relays));
+      }
+    }
+
+    function openMenu() {
+      menuOpen = true;
+      menu.hidden = false;
+      filter.value = "";
+      renderOptions();
+      filter.focus();
+    }
+
+    function closeMenu() {
+      menuOpen = false;
+      menu.hidden = true;
+    }
+
+    function setScanning(on) {
+      scanning = on;
+      goBtn.textContent = on ? "Stop" : "Find fastest";
+      goBtn.classList.toggle("primary", !on);
+      goBtn.classList.toggle("stop", on);
+      countryBtn.disabled = on;
+      if (!on) {
+        bar.style.width = "0";
+      }
+      renderIdle();
+    }
+
+    let renderQueued = false;
+    function scheduleRender() {
+      if (renderQueued) return;
+      renderQueued = true;
+      requestAnimationFrame(() => {
+        renderQueued = false;
+        render();
+      });
+    }
+
+    function render() {
+      const items = [...rows.values()].sort((a, b) => a.ms - b.ms).slice(0, 8);
+      hint.hidden = items.length > 0 || scanning;
+      list.replaceChildren();
+      const current = (status.relay || "").toLowerCase();
+      items.forEach((item, i) => {
+        const li = document.createElement("li");
+        li.className = "row" + (i === 0 ? " best" : "");
+        const ms = document.createElement("div");
+        ms.className = "ms";
+        ms.textContent = fmt(item.ms);
+        const where = document.createElement("div");
+        where.className = "where";
+        const city = document.createElement("strong");
+        city.textContent = item.city;
+        const meta = document.createElement("em");
+        meta.textContent = item.country + " · " + item.hostname;
+        if (item.method === "tcp") {
+          const tag = document.createElement("span");
+          tag.className = "tcp";
+          tag.textContent = "tcp";
+          meta.append(tag);
+        }
+        where.append(city, meta);
+        const here = item.hostname === current;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        if (here) {
+          btn.className = "now";
+          btn.textContent = "Now";
+          btn.disabled = true;
+        } else {
+          btn.className = "conn";
+          btn.textContent = "Connect";
+          btn.addEventListener("click", () => connect(item.hostname, btn));
+        }
+        li.append(ms, where, btn);
+        list.append(li);
+      });
+      renderIdle();
+    }
+
+    async function loadMeta() {
+      showError("");
+      try {
+        const res = await fetch("/api/meta");
+        const data = await res.json();
+        if (data.status) applyStatus(data.status);
+        if (!res.ok) {
+          showError(data.error || "Couldn't load servers.");
+          return;
+        }
+        countries = data.countries || [];
+        countryLabel();
+      } catch (err) {
+        showError("Couldn't load servers.");
+      }
+    }
+
+    function onEvent(ev) {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === "start") {
+        rows = new Map();
+        setNote("");
+        showError("");
+        phase.textContent = "";
+        bar.style.width = "0";
+        setScanning(true);
+        render();
+        return;
+      }
+      if (msg.type === "info") {
+        setNote(msg.text || "");
+        return;
+      }
+      if (msg.type === "phase" || msg.type === "progress") {
+        if (msg.text) phase.textContent = msg.text;
+        if (msg.total) bar.style.width = Math.round((msg.done / msg.total) * 100) + "%";
+        return;
+      }
+      if (msg.type === "result") {
+        rows.set(msg.hostname, msg);
+        scheduleRender();
+        return;
+      }
+      if (msg.type === "done" || msg.type === "stopped" || msg.type === "error") {
+        setScanning(false);
+        if (msg.type === "error") showError(msg.message || "Scan failed.");
+        if (msg.type === "done") {
+          const seconds = (msg.elapsed_ms / 1000).toFixed(1);
+          phase.textContent = rows.size + " answered in " + seconds + "s";
+        }
+        if (msg.type === "stopped") phase.textContent = "Stopped";
+        if (source) source.close();
+        source = null;
+        render();
+      }
+    }
+
+    async function startScan() {
+      showError("");
+      setNote("");
+      rows = new Map();
+      render();
+      setScanning(true);
+      phase.textContent = "Starting";
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setScanning(false);
+        showError(data.error || "Couldn't start the scan.");
+        return;
+      }
+      if (source) source.close();
+      source = new EventSource("/api/events");
+      source.onmessage = onEvent;
+      source.onerror = () => {
+        if (!scanning || !source || source.readyState !== EventSource.CLOSED) return;
+        setScanning(false);
+        showError("Lost the scan stream.");
+      };
+    }
+
+    async function stopScan() {
+      await fetch("/api/stop", { method: "POST" });
+    }
+
+    async function connect(hostname, btn) {
+      btn.disabled = true;
+      btn.textContent = "…";
+      showError("");
+      const res = await fetch("/api/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostname })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        btn.disabled = false;
+        btn.textContent = "Connect";
+        showError(data.error || "Couldn't connect.");
+        return;
+      }
+      applyStatus(data);
+    }
+
+    countryBtn.addEventListener("click", () => menuOpen ? closeMenu() : openMenu());
+    filter.addEventListener("input", renderOptions);
+    filter.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") closeMenu();
+      if (ev.key === "Enter") {
+        const first = options.querySelector("button");
+        if (first) first.click();
+      }
+    });
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") closeMenu();
+    });
+    document.addEventListener("click", (ev) => {
+      if (!menuOpen) return;
+      if (ev.target === countryBtn || countryBtn.contains(ev.target)) return;
+      if (menu.contains(ev.target)) return;
+      closeMenu();
+    });
+    goBtn.addEventListener("click", () => scanning ? stopScan() : startScan());
+    disconnectBtn.addEventListener("click", async () => {
+      disconnectBtn.disabled = true;
+      const res = await fetch("/api/disconnect", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      disconnectBtn.disabled = false;
+      if (!res.ok) {
+        showError(data.error || "Couldn't disconnect.");
+        return;
+      }
+      applyStatus(data);
+    });
+
+    loadMeta();
+    setInterval(async () => {
+      if (scanning) return;
+      try {
+        const res = await fetch("/api/status");
+        if (res.ok) applyStatus(await res.json());
+      } catch (err) {}
+    }, 4000);
+  </script>
+</body>
+</html>

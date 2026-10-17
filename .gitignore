@@ -1,0 +1,6 @@
+*.exe
+*.test
+*.out
+/dist/
+.idea/
+.vscode/
